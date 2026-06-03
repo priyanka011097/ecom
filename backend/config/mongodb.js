@@ -1,8 +1,11 @@
 import mongoose from "mongoose";
 import dns from "node:dns";
 
-// This network's default DNS resolver refuses Atlas SRV lookups; use public DNS.
-dns.setServers(["8.8.8.8", "1.1.1.1"]);
+// Some local networks' DNS resolvers refuse Atlas SRV lookups; force public DNS.
+// Skip on Vercel (its runtime DNS is fine, and overriding it can break resolution).
+if (!process.env.VERCEL) {
+    dns.setServers(["8.8.8.8", "1.1.1.1"]);
+}
 
 const connectDB = async () => {
 
