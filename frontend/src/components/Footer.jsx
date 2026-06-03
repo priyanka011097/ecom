@@ -9,9 +9,6 @@ const Footer = () => {
 
         <div>
             <img src={assets.logo} className='mb-5 w-32' alt="" />
-            <p className='w-full md:w-2/3 text-gray-600'>
-            Dreams Clothing brings you the latest in fashion with trendy, high-quality clothing for every occasion. Discover stylish collections, enjoy a seamless shopping experience, and express your unique style effortlessly. Fast shipping, exclusive deals, and hassle-free returns await you!  
-            </p>
         </div>
 
         <div>
