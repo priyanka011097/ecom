@@ -7,13 +7,24 @@ import razorpay from 'razorpay'
 const currency = 'inr'
 const deliveryCharge = 50
 
-// gateway initialize
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
+// gateway initialize (lazy: only created when a payment route is actually used,
+// so missing/placeholder payment keys don't crash the whole app at startup)
+let stripeInstance = null
+const getStripe = () => {
+    if (!stripeInstance) stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY)
+    return stripeInstance
+}
 
-const razorpayInstance = new razorpay({
-    key_id : process.env.RAZORPAY_KEY_ID,
-    key_secret : process.env.RAZORPAY_KEY_SECRET,
-})
+let razorpayInstance = null
+const getRazorpay = () => {
+    if (!razorpayInstance) {
+        razorpayInstance = new razorpay({
+            key_id: process.env.RAZORPAY_KEY_ID,
+            key_secret: process.env.RAZORPAY_KEY_SECRET,
+        })
+    }
+    return razorpayInstance
+}
 
 // Placing orders using COD Method
 const placeOrder = async (req,res) => {
@@ -89,7 +100,7 @@ const placeOrderStripe = async (req,res) => {
             quantity: 1
         })
 
-        const session = await stripe.checkout.sessions.create({
+        const session = await getStripe().checkout.sessions.create({
             success_url: `${origin}/verify?success=true&orderId=${newOrder._id}`,
             cancel_url:  `${origin}/verify?success=false&orderId=${newOrder._id}`,
             line_items,
@@ -151,7 +162,7 @@ const placeOrderRazorpay = async (req,res) => {
             receipt : newOrder._id.toString()
         }
 
-        await razorpayInstance.orders.create(options, (error,order)=>{
+        await getRazorpay().orders.create(options, (error,order)=>{
             if (error) {
                 console.log(error)
                 return res.json({success:false, message: error})
@@ -170,7 +181,7 @@ const verifyRazorpay = async (req,res) => {
         
         const { userId, razorpay_order_id  } = req.body
 
-        const orderInfo = await razorpayInstance.orders.fetch(razorpay_order_id)
+        const orderInfo = await getRazorpay().orders.fetch(razorpay_order_id)
         if (orderInfo.status === 'paid') {
             await orderModel.findByIdAndUpdate(orderInfo.receipt,{payment:true});
             await userModel.findByIdAndUpdate(userId,{cartData:{}})
